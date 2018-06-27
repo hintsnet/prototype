@@ -1,6 +1,10 @@
 <html>
     <head>
+        {% if title %}
         <title>{{ title }} - 引思网卡片库</title>
+        {% else %}
+        <title>欢迎访问引思网卡片库！</title>
+        {% endif %}
     </head>
     <body>
         <h1>你好， {{ users.username }}！</h1>
