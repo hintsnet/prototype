@@ -1,15 +1,8 @@
-<html>
-    <head>
-        {% if title %}
-        <title>{{ title }} - 引思网卡片库</title>
-        {% else %}
-        <title>欢迎访问引思网卡片库！</title>
-        {% endif %}
-    </head>
-    <body>
-        <h1>你好， {{ users.username }}！</h1>
-        {% for post in posts %}
-          <div><p>{{ post.author.username }} 在 TA 的大作中提到：<b>{{ post.body }}</b></p></div>
-        {% endfor %} 
-    </body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>你好，{{ users.username }}！</h1>
+    {% for post in posts %}
+      <div><p>{{ post.author.username }} 在 TA 的大作中提到：<b>{{ post.body }}</b></p></div>
+    {% endfor %} 
+{% endblock %}

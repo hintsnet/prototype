@@ -1,0 +1,15 @@
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - 引思网卡片库</title>
+        {% else %}
+        <title>欢迎访问引思网卡片库！</title>
+        {% endif %}
+    </head>
+    <body>
+        <div>引思网卡片库：<a href="/index">首页</a></div>
+        <hr>
+        {% block content %}
+        {% endblock %}
+    </body>
+</html>
