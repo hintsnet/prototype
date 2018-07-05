@@ -12,6 +12,16 @@
             <a href="/login">登录</a>
         </div>
         <hr>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+        <!-- flashed messages will show above -->
         {% block content %}
         {% endblock %}
     </body>
