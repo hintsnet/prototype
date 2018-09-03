@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>登入</h1>
-    <form action='' method='POST' novalidate>
-        {{ form.hidden_tag() }}
-        <p>
-            {{ form.username.label }}<br>
-            {{ form.username(size=64) }}
-        </p>
-        <p>
-            {{ form.password.label }}<br>
-            {{ form.password(size=64) }}
-        </p>
-        <p>{{ form.remember() }} {{ form.remember.label }}</p>
-        <p>{{ form.submit() }}</p>
-    </form>
+	<h1>登入</h1>
+	<form action='' method='POST' novalidate>
+		{{ form.hidden_tag() }}
+		<p>
+			{{ form.username.label }}<br>
+			{{ form.username(size=64) }}
+		</p>
+		<p>
+			{{ form.password.label }}<br>
+			{{ form.password(size=64) }}
+		</p>
+		<p>{{ form.remember() }} {{ form.remember.label }}</p>
+		<p>{{ form.submit() }}</p>
+	</form>
 {% endblock %}
