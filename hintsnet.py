@@ -1,2 +1,2 @@
-from webapp import flask_obj
-print(" * Preset secret key is: %s" % flask_obj.config['SECRET_KEY'])
+from webapp import flask_app
+print(" * Preset secret key is: %s" % flask_app.config['SECRET_KEY'])
