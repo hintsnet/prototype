@@ -1,28 +1,28 @@
 <html>
-    <head>
-        {% if title %}
-        <title>{{ title }} - 引思网卡片库</title>
-        {% else %}
-        <title>欢迎访问引思网卡片库！</title>
-        {% endif %}
-    </head>
-    <body>
-        <div>引思网卡片库：
-            <a href="/index">首页</a>
-            <a href="/login">登录</a>
-        </div>
-        <hr>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% endwith %}
-        <!-- flashed messages will show above -->
-        {% block content %}
-        {% endblock %}
-    </body>
+	<head>
+		{% if title %}
+		<title>{{ title }} - 引思网卡片库</title>
+		{% else %}
+		<title>欢迎访问引思网卡片库！</title>
+		{% endif %}
+	</head>
+	<body>
+		<div>引思网卡片库：
+			<a href="/index">首页</a>
+			<a href="/login">登录</a>
+		</div>
+		<hr>
+		{% with messages = get_flashed_messages() %}
+		{% if messages %}
+		<ul>
+			{% for message in messages %}
+			<li>{{ message }}</li>
+			{% endfor %}
+		</ul>
+		{% endif %}
+		{% endwith %}
+		<!-- flashed messages will show above -->
+		{% block content %}
+		{% endblock %}
+	</body>
 </html>
