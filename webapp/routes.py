@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, url_for, g
 from webapp import flask_app
-from webapp.forms import LoginForm
+from webapp.forms import LoginForm, CreateCardForm
 from neo4j import GraphDatabase
 
 neo4j_drv = GraphDatabase.driver(flask_app.config['NEO4J_DB_URI'], \
@@ -36,18 +36,40 @@ def index():
 @flask_app.route('/cards')
 def cards():
 	my_user = { 'username': 'pimgeek' }
-	my_cards = get_cards()
+	my_cards = get_cards_in_db()
 	page_view = render_template('cards.html', user=my_user, cards=my_cards)
 	return page_view
 
-def get_cards():
+def get_cards_in_db():
 	db = get_db()
 	results = db.run("match (c)" "RETURN c.title as title, c.content as content")
 	cards = []
 	for record in results:
 		cards.append({'title': record['title'], 'content': record['content']})
 	return cards
-	
+
+@flask_app.route('/cards/new', methods=['GET','POST'])
+def new_card():
+	my_form = CreateCardForm()
+	if my_form.validate_on_submit():
+		new_card = new_card_in_db(my_form.card_title.data, my_form.card_content.data)
+		flash('创建了一张新卡片 [%s]，其内容为：%s' % \
+			(my_form.card_title.data, my_form.card_content.data))
+		page_view = redirect(url_for('cards'))
+	else:
+		if (my_form.card_title.data or my_form.card_content.data):
+			flash('用户输入内容有误，请重新输入...')
+		else:
+			pass
+		page_view = render_template('new_card.html', title='创建新卡片', form=my_form)
+	return page_view
+
+def new_card_in_db(card_title, card_content):
+	db = get_db()
+	results = db.run("create (c:hintCard { title:'%s', content:'%s' } )" \
+		% (card_title, card_content))
+	return results
+
 @flask_app.route('/login', methods=['GET','POST'])
 def login():
 	my_form = LoginForm()

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	<h1>添加新卡片</h1>
+	<form action='' method='POST' novalidate>
+		{{ form.hidden_tag() }}
+		<p>
+			{{ form.card_title.label }}<br>
+			{{ form.card_title(size=100) }}<br>
+			{% for error in form.card_title.errors %}
+				<span style="color: red;">[{{ error }}]</span>
+			{% endfor %}
+		</p>
+		<p>
+			{{ form.card_content.label }}<br>
+			{{ form.card_content(size=1000) }}<br>
+			{% for error in form.card_content.errors %}
+				<span style="color: red;">[{{ error }}]</span>
+			{% endfor %}
+		</p>
+		<p>{{ form.submit() }}</p>
+	</form>
+{% endblock %}
