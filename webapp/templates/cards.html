@@ -4,9 +4,8 @@
 	<h1>你好，{{ user.username }}！</h1>
 	{% for card in cards %}
 		<div>
-			<p>{{ user.username }} 在 TA 的卡片中写到：</p>
-			<h4>{{ card.title }}</h4>
-			<h5>{{ card.content }}</h5>
+			<p>{{ user.username }} 在卡片 <b>[{{ card.title }}]</b> 中写到：</p>
+			<h4>{{ card.content }}</h4>
 		</div>
 	{% endfor %} 
 {% endblock %}
