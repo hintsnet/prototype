@@ -3,6 +3,7 @@ from webapp import flask_app
 from webapp.forms import LoginForm, CreateCardForm
 from neo4j import GraphDatabase
 
+# 创建 neo4j 数据库驱动器对象，以供调用
 neo4j_drv = GraphDatabase.driver(flask_app.config['NEO4J_DB_URI'], \
 	auth=(flask_app.config['NEO4J_DB_USR'], flask_app.config['NEO4J_DB_KEY']))
 
@@ -17,24 +18,11 @@ def close_db(error):
 		g.neo4j_db.close()
 		
 @flask_app.route('/')
-@flask_app.route('/index')
-def index():
-	my_user = { 'username': 'pimgeek' }
-	my_posts = [
-		{
-			'author': { 'username': 'pimgeek' },
-			'body': '一切有为法，皆梦幻泡影。'
-		},
-		{
-			'author': { 'username': 'ceciliapple' },
-			'body': 'Smelly Cat, Smelly Cat, What Do They Feed You?'
-		}
-	]
-	page_view = render_template('index.html', user=my_user, posts=my_posts)
-	return page_view
-
 @flask_app.route('/cards')
 def cards():
+	# 在当前版本中，暂未实现用户登录，所以设置一个默认的
+	# my_user 变量，假设它就是成功登录后的用户。
+	# 本文件中的各个路由处理函数，都基于这个逻辑来定义
 	my_user = { 'username': 'pimgeek' }
 	my_cards = get_cards_in_db()
 	page_view = render_template('cards.html', user=my_user, cards=my_cards)
@@ -76,7 +64,7 @@ def login():
 	if my_form.validate_on_submit():
 		flash('用户 %s 尝试登录，是否要求记忆登录信息？%s' % \
 			(my_form.username.data, my_form.remember.data))
-		page_view = redirect(url_for('index'))
+		page_view = redirect(url_for('cards'))
 	else:
 		if (my_form.username.data or my_form.password.data or my_form.remember.data):
 			flash('用户输入内容有误，请重新输入...')
