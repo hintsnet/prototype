@@ -1,6 +1,7 @@
 __pycache__
 hack-env
 .vscode
+.idea
 *.pyc
 *.swp
 *.*~
