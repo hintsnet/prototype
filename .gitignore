@@ -1,5 +1,7 @@
 __pycache__
 hack-env
+preload.py
+.flaskenv
 .vscode
 .idea
 *.pyc
