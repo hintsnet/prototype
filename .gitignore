@@ -1,5 +1,6 @@
 __pycache__
 hack-env
+wsl
 preload.py
 .flaskenv
 .vscode
