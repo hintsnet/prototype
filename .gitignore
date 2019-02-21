@@ -1,0 +1,5 @@
+.flaskenv
+.idea
+.vscode
+__pycache__
+hack-env
