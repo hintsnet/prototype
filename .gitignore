@@ -3,3 +3,7 @@
 .vscode
 __pycache__
 hack-env
+tb
+tmp
+pub
+prep_env
