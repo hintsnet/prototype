@@ -39,6 +39,16 @@ def get_pub_thought_ids(db_cursor):
     thought_ids = [result[0] for result in results]
     return thought_ids
 
+# 给定一组节点 id, 获取相关节点的详细信息
+# 目前, 只获取 name 字段的内容
+def get_thought_data(db_cursor, thought_ids):
+    thought_data = []
+    for thought_id in thought_ids:
+        sql = 'select name from thoughts where id="%s"' % thought_id
+        results = query_db(db_cursor, sql)
+        thought_data.append({'id': thought_id,'name': results[0][0]})
+    return thought_data
+
 # 主程序入口处
 if(__name__ == '__main__'):
 	# 修复 cmd.exe 中文打印问题
@@ -46,6 +56,8 @@ if(__name__ == '__main__'):
 		mode='w', encoding='utf8', buffering=1)
 	
 	# 获取环境变量中的路径设置
+	# 特别说明: 请事先运行 source prep_env 命令
+	# 为安全起见, prep_env 文件不会被加入版本库
 	# 本地 TB 数据所在目录
 	local_tb_dir = Config.local_tb_dir
 	# TB 数据库文件名
@@ -64,5 +76,8 @@ if(__name__ == '__main__'):
 	
 	# 连接 sqlite 数据库
 	db_cursor = connect_sqlite_db(hn_db_path)
-	res = get_pub_thought_ids(db_cursor)
+	# 获取所有待发布的节点 id 列表
+	pub_thought_ids = get_pub_thought_ids(db_cursor)
+	# 获取每个节点的详细信息
+	res = get_thought_data(db_cursor, pub_thought_ids)
 	print(res)
