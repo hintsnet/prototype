@@ -75,7 +75,7 @@ def check_media_files(thought_id, local_dir, pub_dir, bucket_handle):
 				print("媒体文件 %s 不需要同步!" % media)
 			else:
 				copyfile(local_media, pub_media)
-				res = bucket_handle.put_object_from_file('hintsnet/tb/media/%s' % pub_media, local_media)
+				res = bucket_handle.put_object_from_file('hintsnet/tb/media/%s' % media, local_media)
 				file_replace_with(pub_note, media, media + "/eq_width")
 				print("媒体文件 %s 同步状态: %s" % (media, res))
 		else:
@@ -83,7 +83,7 @@ def check_media_files(thought_id, local_dir, pub_dir, bucket_handle):
 	return True
 
 # 获取节点的笔记内容(如果有的话)
-def get_thought_detail(thought_data, local_dir, pub_dir):
+def get_thought_detail(thought_data, local_dir, pub_dir, bucket_handle):
 	for thought in thought_data:
 		local_note = '%s/%s/Notes/notes.html' % (local_dir, thought['id'])
 		pub_note = '%s/%s.html' % (pub_dir, thought['id'])
@@ -99,7 +99,7 @@ def get_thought_detail(thought_data, local_dir, pub_dir):
 					note_full_html = gen_html_page(thought['name'], note_content + sns_comment + '\n\n<META http-equiv=Content-Type content="text/html; charset=utf-8">')
 					note_fh.write(note_full_html)
 				media_list = get_media_list(thought['id'], local_dir)
-				check_media_files(thought['id'], local_dir, pub_dir, bucket_h)
+				check_media_files(thought['id'], local_dir, pub_dir, bucket_handle)
 		else:
 			with open(pub_note, "w", encoding="utf-8") as note_fh:
 				note_full_html = '<p>暂无笔记</p>\n\n<META http-equiv=Content-Type content="text/html; charset=utf-8">'
@@ -174,6 +174,8 @@ if(__name__ == '__main__'):
 	
 	# 获取每个节点的详细信息
 	thought_data = get_thought_data(db_cursor, pub_thought_ids)
+	
+	# 生成节点内容索引
 	thought_idx = gen_thought_index(thought_data)
 	
 	sns_comment = '''
@@ -190,6 +192,6 @@ if(__name__ == '__main__'):
 	auth = oss2.Auth(Config.oss_acckey, Config.oss_accsec)
 	bucket_h = oss2.Bucket(auth, Config.oss_epoint, Config.oss_bucket)
 	
-	html_body = gen_html_page(u"引思卡片索引", thought_idx)
-	gen_html_page(html_body,"index.html")
-	get_thought_detail(thought_data, local_tb_dir, tb_pub_basedir)
+	index_page = gen_html_page("引思卡片索引", thought_idx)
+	write_content_to_file(index_page, tb_pub_basedir, "index.html")
+	get_thought_detail(thought_data, local_tb_dir, tb_pub_basedir, bucket_h)
