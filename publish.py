@@ -9,7 +9,7 @@ import sys
 
 # 从 TB 数据目录同步最新的数据库
 def sync_tb_db(tb_db_path, hn_db_path):
-	if (os.path.isfile(hn_db_path) and filecmp.cmp(tb_db_path, hn_db_path, shallow=False)):
+	if os.path.isfile(hn_db_path) and filecmp.cmp(tb_db_path, hn_db_path, shallow=False):
 		return "数据库不需要同步!"
 	else:
 		res = copyfile(tb_db_path, hn_db_path)
@@ -64,29 +64,44 @@ def get_media_list(thought_id, local_dir):
 	media_list.remove('notes.html')
 	return media_list
 
+def check_media_files(thought_id, local_dir, pub_dir, bucket_handle):
+	media_list = get_media_list(thought_id, local_dir)
+	for media in media_list:
+		local_media = '%s/%s/Notes/%s' % (local_dir, thought_id, media)
+		pub_media = "%s/media/%s" % (pub_dir, media)
+		pub_note = '%s/%s.html' % (pub_dir, thought_id)
+		if os.path.isfile(local_media):
+			if os.path.isfile(pub_media) and filecmp.cmp(local_media, pub_media, shallow=False):
+				print("媒体文件 %s 不需要同步!" % media)
+			else:
+				copyfile(local_media, pub_media)
+				res = bucket_handle.put_object_from_file('hintsnet/tb/media/%s' % pub_media, local_media)
+				file_replace_with(pub_note, media, media + "/eq_width")
+				print("媒体文件 %s 同步状态: %s" % (media, res))
+		else:
+			pass
+	return True
+
 # 获取节点的笔记内容(如果有的话)
 def get_thought_detail(thought_data, local_dir, pub_dir):
 	for thought in thought_data:
-		src_note = '%s/%s/Notes/notes.html' % (local_dir, thought['id'])
-		dest_note = '%s/%s.html' % (pub_dir, thought['id'])
-		if os.path.isfile(src_note):
-			copyfile(src_note, dest_note)
-			file_replace_with(dest_note, '<!--BrainNotesBase-->', 'https://pimfans.oss-cn-beijing.aliyuncs.com/hintsnet/tb/media')
-			with open(dest_note, "r", encoding="utf-8") as note_fh:
-				note_content = note_fh.read()
-			with open(dest_note, "w", encoding="utf-8") as note_fh:
-				note_full_html = gen_html_page(thought['name'], note_content + sns_comment + '\n\n<META http-equiv=Content-Type content="text/html; charset=utf-8">')
-				note_fh.write(note_full_html)
-			media_list = get_media_list(thought['id'], local_dir)
-			for media in media_list:
-				file_replace_with(dest_note, media, media + "/eq_width")
-				src_media = '%s/%s/Notes/%s' % (local_dir, thought['id'], media)
-				dest_media = '%s/media/%s' % (pub_dir, media)
-				copyfile(src_media, dest_media)
-				res = bucket.put_object_from_file('hintsnet/tb/media/%s' % media, src_media)
-				print(res)
+		local_note = '%s/%s/Notes/notes.html' % (local_dir, thought['id'])
+		pub_note = '%s/%s.html' % (pub_dir, thought['id'])
+		if os.path.isfile(local_note):
+			if os.path.isfile(pub_note) and filecmp.cmp(local_note, pub_note, shallow=False):
+				pass
+			else:
+				copyfile(local_note, pub_note)
+				file_replace_with(pub_note, '<!--BrainNotesBase-->', 'https://pimfans.oss-cn-beijing.aliyuncs.com/hintsnet/tb/media')
+				with open(pub_note, "r", encoding="utf-8") as note_fh:
+					note_content = note_fh.read()
+				with open(pub_note, "w", encoding="utf-8") as note_fh:
+					note_full_html = gen_html_page(thought['name'], note_content + sns_comment + '\n\n<META http-equiv=Content-Type content="text/html; charset=utf-8">')
+					note_fh.write(note_full_html)
+				media_list = get_media_list(thought['id'], local_dir)
+				check_media_files(thought['id'], local_dir, pub_dir, bucket_h)
 		else:
-			with open(dest_note, "w", encoding="utf-8") as note_fh:
+			with open(pub_note, "w", encoding="utf-8") as note_fh:
 				note_full_html = '<p>暂无笔记</p>\n\n<META http-equiv=Content-Type content="text/html; charset=utf-8">'
 				note_fh.write(note_full_html)
 	return True
@@ -156,6 +171,7 @@ if(__name__ == '__main__'):
 	db_cursor = connect_sqlite_db(hn_db_path)
 	# 获取所有待发布的节点 id 列表
 	pub_thought_ids = get_pub_thought_ids(db_cursor)
+	
 	# 获取每个节点的详细信息
 	thought_data = get_thought_data(db_cursor, pub_thought_ids)
 	thought_idx = gen_thought_index(thought_data)
@@ -172,7 +188,7 @@ if(__name__ == '__main__'):
 </script>
 	'''
 	auth = oss2.Auth(Config.oss_acckey, Config.oss_accsec)
-	bucket = oss2.Bucket(auth, Config.oss_epoint, Config.oss_bucket)
+	bucket_h = oss2.Bucket(auth, Config.oss_epoint, Config.oss_bucket)
 	
 	html_body = gen_html_page(u"引思卡片索引", thought_idx)
 	gen_html_page(html_body,"index.html")
