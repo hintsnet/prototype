@@ -98,7 +98,6 @@ def get_thought_detail(thought_data, local_dir, pub_dir, bucket_handle):
 				with open(pub_note, "w", encoding="utf-8") as note_fh:
 					note_full_html = gen_html_page(thought['name'], note_content + sns_comment + '\n\n<META http-equiv=Content-Type content="text/html; charset=utf-8">')
 					note_fh.write(note_full_html)
-				media_list = get_media_list(thought['id'], local_dir)
 				check_media_files(thought['id'], local_dir, pub_dir, bucket_handle)
 		else:
 			with open(pub_note, "w", encoding="utf-8") as note_fh:
