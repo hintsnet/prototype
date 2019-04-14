@@ -50,27 +50,88 @@ def get_pub_thought_ids(db_cursor):
 	return thought_ids
 
 # 定义一个方法, 给定一个节点 id, 获取各种与之相关的数据
-def get_thought_data(db_cursor, thought_id):
+def get_curr_thought_data(db_cursor, thought_id):
 	# 定义 sql 语句, 对每个节点进行相关数据的查询
 	sql = """
 	select name from thoughts where id="%s"
 	""" % thought_id
 	results = query_db(db_cursor, sql)
 	# 把查询结果转化为 python dict
-	thought_data = { \
+	curr_thought_data = { \
 		'id': thought_id, \
 		'name': results[0][0] \
 	}
-	return thought_data
+	return curr_thought_data
 
-# 定义一个方法, 以 html list 格式生成待发布节点列表
-def gen_thought_index(db_cursor, thought_ids):
-	thought_items = ""
-	for thought_id in thought_ids:
-		thought_data = get_thought_data(db_cursor, thought_id)
-		thought_items += '<li><a href="%s.html">%s</a></li>\n' % (thought_data['id'], thought_data['name'])
-	index_body = "<ul>\n%s</ul>" % thought_items
-	return index_body
+# 定义一个方法, 给定一个节点 id, 获取其前置节点的相关数据
+def get_pre_thought_data(db_cursor, thought_id):
+	# 定义 sql 语句, 对每个节点进行相关数据的查询
+	sql = """
+	select pre.id, pre.name
+	from thoughts as curr inner join links as l1 inner join thoughts as pre 
+		inner join links as l2 inner join thoughts as tag
+	where pre.id = l1.thoughtIdA and l1.thoughtIdB = curr.id and l1.relation = 1 and
+		tag.id = l2.thoughtIdA and pre.id = l2.thoughtIdB and
+		l2.meaning = 5 and tag.name = "可发布" and
+		curr.id="%s"
+	""" % thought_id
+	results = query_db(db_cursor, sql)
+	# 把查询结果转化为 python dict
+	pre_thought_data = []
+	for result in results:
+		tmp_data = { \
+		'id': result[0], \
+		'name': result[1], \
+		}
+		pre_thought_data.append(tmp_data)
+	return pre_thought_data
+
+# 定义一个方法, 给定一个节点 id, 获取其前置节点的相关数据
+def get_post_thought_data(db_cursor, thought_id):
+	# 定义 sql 语句, 对每个节点进行相关数据的查询
+	sql = """
+	select post.id, post.name
+	from thoughts as curr inner join links as l1 inner join thoughts as post 
+		inner join links as l2 inner join thoughts as tag
+	where curr.id = l1.thoughtIdA and l1.thoughtIdB = post.id and l1.relation = 1 and
+		tag.id = l2.thoughtIdA and post.id = l2.thoughtIdB and
+		l2.meaning = 5 and tag.name = "可发布" and
+		curr.id="%s"
+	""" % thought_id
+	results = query_db(db_cursor, sql)
+	# 把查询结果转化为 python dict
+	post_thought_data = []
+	for result in results:
+		tmp_data = { \
+		'id': result[0], \
+		'name': result[1], \
+		}
+		post_thought_data.append(tmp_data)
+	return post_thought_data
+
+# 定义一个方法, 给定一个节点 id, 获取其关联点的相关数据
+def get_assoc_thought_data(db_cursor, thought_id):
+	# 定义 sql 语句, 对每个节点进行相关数据的查询
+	sql = """
+	select assoc.id, assoc.name
+	from thoughts as curr inner join links as l1 inner join thoughts as assoc 
+		inner join links as l2 inner join thoughts as tag
+	where ((curr.id = l1.thoughtIdA and l1.thoughtIdB = assoc.id) or 
+		(assoc.id = l1.thoughtIdA and l1.thoughtIdB = curr.id)) and l1.relation = 3
+		and tag.id = l2.thoughtIdA and assoc.id = l2.thoughtIdB and
+		l2.meaning = 5 and tag.name = "可发布" and
+		curr.id="%s"
+	""" % thought_id
+	results = query_db(db_cursor, sql)
+	# 把查询结果转化为 python dict
+	assoc_thought_data = []
+	for result in results:
+		tmp_data = { \
+		'id': result[0], \
+		'name': result[1], \
+		}
+		assoc_thought_data.append(tmp_data)
+	return assoc_thought_data
 
 # 获取节点的附件(多媒体文件)列表
 def get_media_file_list(thought_id, local_dir):
@@ -116,6 +177,29 @@ def get_file_content(file):
 	with open(file, "r", encoding="utf-8") as fh:
 		content = fh.read()
 	return content
+	
+# 定义一个方法, 获取当前节点相关节点的内容, 并转换为 html 链接
+def get_related_thought_lists(db_cursor, thought_id):
+	related_content = ""
+	pre_data = get_pre_thought_data(db_cursor, thought_id)
+	if len(pre_data) > 0:
+		related_content += gen_html_thought_list("回顾阅读", pre_data)
+	post_data = get_post_thought_data(db_cursor, thought_id)
+	if len(post_data) > 0:
+		related_content += gen_html_thought_list("延伸阅读", post_data)
+	assoc_data = get_assoc_thought_data(db_cursor, thought_id)
+	if len(assoc_data) > 0:
+		related_content += gen_html_thought_list("参考笔记", assoc_data)
+	return related_content
+
+# 定义一个方法, 以 html list 格式生成节点列表
+def gen_html_thought_list(list_title, thought_data):
+	tmp_str = ""
+	for thought_datum in thought_data:
+		 tmp_str += '<li><a href="%s.html">%s</a></li>\n' % \
+		 (thought_datum['id'], thought_datum['name'])
+	html_list = "<h3>%s</h3><ul>\n%s</ul>" % (list_title, tmp_str)
+	return html_list
 
 # 定义一个方法, 把本地笔记内容转换为适合公网发布的笔记内容
 def make_local_note_public(local_note_content):
@@ -124,6 +208,22 @@ def make_local_note_public(local_note_content):
 		'https://pimfans.oss-cn-beijing.aliyuncs.com/hintsnet/tb/media')
 	return pub_note
 
+# 定义一个方法, 为 html 内容添加评论框
+def append_comment_form():
+	# utteranc.es 提供的评论插件代码
+	sns_comment_github = '''
+<h3>使用 GitHub 账号发表评论</h3>
+<script src="https://utteranc.es/client.js"
+	repo="hintsnet/discussions"
+	issue-term="title"
+	label="utterances"
+	theme="github-light"
+	crossorigin="anonymous"
+	async>
+</script>
+	'''
+	return sns_comment_github
+	
 # 获取节点的笔记文件
 # 如果没有找到笔记文件, 则返回 False
 def get_thought_note_file(local_dir, thought_id):
@@ -158,11 +258,12 @@ def gen_full_html(title, body):
 """ % (title, body)
 	return full_html
 
-def gen_site_index_file(db_cursor, thought_ids, to_pub_dir):
+def gen_site_index_file(db_cursor, root_thought_id, to_pub_dir):
 	# 生成待发布节点(网页链接入口)的索引
-	thought_idx = gen_thought_index(db_cursor, thought_ids)
+	post_data = get_post_thought_data(db_cursor, root_thought_id)
+	to_pub_thought_list = gen_html_thought_list("所有笔记列表", post_data)
 	# 为节点索引生成完整的 html 页面内容
-	index_full_html = gen_full_html("引思卡片索引", thought_idx)
+	index_full_html = gen_full_html("引思卡片索引", to_pub_thought_list)
 	# 把节点索引 html 内容发布为 index.html 页面
 	ret = write_content_to_file(index_full_html, "%s/index.html" % to_pub_dir)
 	return ret
@@ -172,24 +273,26 @@ def gen_site_note_files(db_cursor, bucket_h, thought_ids, local_dir, to_pub_dir)
 	rets = ""
 	for thought_id in thought_ids:
 		# 获取当前节点 id 对应的各项信息
-		thought_data = get_thought_data(db_cursor, thought_id)
+		thought_data = get_curr_thought_data(db_cursor, thought_id)
 		# 定义当前节点对应的待发布节点文件路径
 		pub_note_file = "%s/%s.html" % (to_pub_dir, thought_id)
 		# 获取当前节点对应的本地笔记文件路径(有可能为 False)
 		local_note_file = get_thought_note_file(local_tb_dir, thought_id)
 		# 定义变量, 保存待发布的笔记内容
-		to_pub_note_content = ""
+		to_pub_note_content = "<h1>%s</h1>" % thought_data['name']
 		# 尝试获取本地笔记文件的内容(如果笔记不存在, 则使用默认内容)
 		if local_note_file != False:
 			# 定义本地笔记文件名
 			local_note_content = get_file_content(local_note_file)
 			# 本地笔记内容公开化(生成基于 oss 的图片链接)
-			to_pub_note_content = make_local_note_public(local_note_content)
+			to_pub_note_content += make_local_note_public(local_note_content)
 			# 把本地图片上传到网络
 			ret = sync_media_files(bucket_h, thought_id, local_dir, to_pub_dir)
 			rets += ret + "\n"
 		else:
-			to_pub_note_content = "<h4>此节点暂无笔记</h4>"
+			to_pub_note_content += "<h4>此节点暂无笔记</h4>"
+		to_pub_note_content += get_related_thought_lists(db_cursor, thought_id)
+		to_pub_note_content += append_comment_form()
 		# 基于待发布笔记内容, 生成 html 内容
 		to_pub_note_html = gen_full_html(thought_data['name'], to_pub_note_content)
 		# html 文件内容存为文件, 以便上传到服务器
@@ -235,22 +338,10 @@ if __name__ == '__main__':
 	bucket_h = oss2.Bucket(auth, Config.oss_epoint, Config.oss_bucket)
 
 	# ---- 收集待发布内容 ----
-	# utteranc.es 提供的评论插件代码
-	sns_comment_github = '''
-<h2>使用 GitHub 账号发表评论</h2>
-<script src="https://utteranc.es/client.js"
-	repo="hintsnet/discussions"
-	issue-term="title"
-	label="utterances"
-	theme="github-light"
-	crossorigin="anonymous"
-	async>
-</script>
-	'''
 	# 获取所有待发布的节点 id 列表
 	pub_thought_ids = get_pub_thought_ids(db_cursor)
 	# 生成网站的索引页面
-	ret = gen_site_index_file(db_cursor, pub_thought_ids, tb_pub_basedir)
+	ret = gen_site_index_file(db_cursor, "28e9f904-f589-46bd-ab4c-ea076e7dff3b", tb_pub_basedir)
 	print("索引文件写入状态: [ %s ]" % os.path.isfile(tb_pub_basedir + "/index.html"))
 	# 生成单个笔记页面
 	ret = gen_site_note_files(db_cursor, bucket_h, pub_thought_ids, local_tb_dir, tb_pub_basedir)
