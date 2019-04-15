@@ -117,7 +117,7 @@ def get_assoc_thought_data(db_cursor, thought_id):
 	from thoughts as curr inner join links as l1 inner join thoughts as assoc 
 		inner join links as l2 inner join thoughts as tag
 	where ((curr.id = l1.thoughtIdA and l1.thoughtIdB = assoc.id) or 
-		(assoc.id = l1.thoughtIdA and l1.thoughtIdB = curr.id)) and l1.relation = 3
+		(curr.id = l1.thoughtIdB and l1.thoughtIdA = assoc.id)) and l1.relation = 3
 		and tag.id = l2.thoughtIdA and assoc.id = l2.thoughtIdB and
 		l2.meaning = 5 and tag.name = "可发布" and
 		curr.id="%s"
@@ -183,13 +183,13 @@ def get_related_thought_lists(db_cursor, thought_id):
 	related_content = ""
 	pre_data = get_pre_thought_data(db_cursor, thought_id)
 	if len(pre_data) > 0:
-		related_content += gen_html_thought_list("回顾阅读", pre_data)
+		related_content += gen_html_thought_list("◀ 回顾阅读", pre_data)
 	post_data = get_post_thought_data(db_cursor, thought_id)
 	if len(post_data) > 0:
-		related_content += gen_html_thought_list("延伸阅读", post_data)
+		related_content += gen_html_thought_list("▶ 延伸阅读", post_data)
 	assoc_data = get_assoc_thought_data(db_cursor, thought_id)
 	if len(assoc_data) > 0:
-		related_content += gen_html_thought_list("参考笔记", assoc_data)
+		related_content += gen_html_thought_list("📚 关联笔记", assoc_data)
 	return related_content
 
 # 定义一个方法, 以 html list 格式生成节点列表
@@ -247,12 +247,19 @@ def gen_full_html(title, body):
 	<title>%s</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1 user-scalable=no">
 	<meta http-equiv=Content-Type content="text/html; charset=utf-8">
+	<link rel="stylesheet" type="text/css" href="./styles/default.css">
 	<style>
 		img { width:95%%; }
 	</style>
   </head>
   <body>
+    <div class="outer_frame">
+      <div class="inner_frame">
+        <div class="node_body">
 %s
+        </div>
+      </div>
+    </div>
   </body>
 </html>
 """ % (title, body)
@@ -324,7 +331,12 @@ if __name__ == '__main__':
 	hn_db_name = Config.hn_db_name
 	# hintsnet 数据库的完整路径
 	hn_db_path = "%s/%s" % (hn_tmp_dir, hn_db_name)
-	
+	# 样式表路径
+	local_css_path = "./styles/default.css"
+	to_pub_css_path = "./pub/styles/default.css"
+	# favicon 路径
+	local_favicon_path = "./favicon.ico"
+	to_pub_favicon_path = "./pub/favicon.ico"
 	# ---- 从 TB 工作目录同步最新版数据库 ----
 	sync_status = sync_file(tb_db_path, hn_db_path)
 	# 打印数据库同步结果
@@ -340,6 +352,15 @@ if __name__ == '__main__':
 	# ---- 收集待发布内容 ----
 	# 获取所有待发布的节点 id 列表
 	pub_thought_ids = get_pub_thought_ids(db_cursor)
+
+	# 复制样式表文件
+	sync_status = sync_file(local_css_path, to_pub_css_path)
+	# 打印样式表同步结果
+	print("样式表文件同步状态: [ %s ]" % sync_status)
+	# 复制 favicon 文件
+	sync_status = sync_file(local_favicon_path, to_pub_favicon_path)
+	# 打印 favicon 同步结果
+	print("样式表文件同步状态: [ %s ]" % sync_status)
 	# 生成网站的索引页面
 	ret = gen_site_index_file(db_cursor, "28e9f904-f589-46bd-ab4c-ea076e7dff3b", tb_pub_basedir)
 	print("索引文件写入状态: [ %s ]" % os.path.isfile(tb_pub_basedir + "/index.html"))
