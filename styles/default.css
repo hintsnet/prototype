@@ -33,6 +33,14 @@ blockquote {
   word-wrap: break-word;
 }
 
+pre {
+  background-color: #e0d7c4;
+  margin: 0;
+  padding: 3px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
 .spacer {
   clear: both;
   height: 6px;

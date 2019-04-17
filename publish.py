@@ -141,12 +141,13 @@ def get_media_file_list(thought_id, local_dir):
 
 # 定义一个方法, 把本地文件上传到 OSS 平台 (目前为 aliyun-oss)
 def sync_file_to_oss(bucket_handle, oss_dir, local_file, to_pub_file):
+	filename = local_file.split('/')[-1]
 	if os.path.isfile(to_pub_file) and \
 		filecmp.cmp(local_file, to_pub_file, shallow=False):
-		return "本地文件 %s 不需要同步!" % local_file.split('/')[-1]
+		return "本地文件 %s 不需要同步!" % filename
 	else:
 		copyfile(local_file, to_pub_file)
-		ret = bucket_handle.put_object_from_file('%s/%s' % (oss_dir, to_pub_file), local_file)
+		ret = bucket_handle.put_object_from_file('%s/%s' % (oss_dir, filename), to_pub_file)
 		return "本地文件 %s 同步状态: %s" % (local_file, ret)
 
 # 批量替换文件中满足条件的字符串
@@ -167,7 +168,6 @@ def sync_media_files(bucket_handle, thought_id, local_dir, to_pub_dir):
 		to_pub_media_file = "%s/media/%s" % (to_pub_dir, media_file)
 		pub_note_file = '%s/%s.html' % (to_pub_dir, thought_id)
 		ret = sync_file_to_oss(bucket_handle, "hintsnet/tb/media", local_media_file, to_pub_media_file)
-		file_replace_with(pub_note_file, to_pub_media_file, to_pub_media_file + "/eq_width")
 		rets += ret + "\n"
 	return rets
 
@@ -367,3 +367,5 @@ if __name__ == '__main__':
 	# 生成单个笔记页面
 	ret = gen_site_note_files(db_cursor, bucket_h, pub_thought_ids, local_tb_dir, tb_pub_basedir)
 	print("笔记文件写入状态: [\n%s]" % ret)
+	# 调用 shell 脚本, 启动静态站内容同步
+	os.system('./site_sync.sh')
