@@ -248,9 +248,6 @@ def gen_full_html(title, body):
 	<meta name="viewport" content="width=device-width, initial-scale=1 user-scalable=no">
 	<meta http-equiv=Content-Type content="text/html; charset=utf-8">
 	<link rel="stylesheet" type="text/css" href="./styles/default.css">
-	<style>
-		img { width:95%%; }
-	</style>
   </head>
   <body>
     <div class="outer_frame">

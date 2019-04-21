@@ -20,8 +20,9 @@ label {
 
 img, embed, iframe {
   border-radius: 10px;
+  display:block;
   margin: 0 auto;
-  width: 95%;
+  max-width: 95%;
 }
 
 blockquote {
@@ -29,7 +30,6 @@ blockquote {
   border-radius: 10px;
   font-size: 85%;
   padding: 5px;
-  word-break: break-all;
   word-wrap: break-word;
 }
 
