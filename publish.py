@@ -196,16 +196,16 @@ def get_related_thought_lists(db_cursor, thought_id):
 def get_thought_datetime_data(db_cursor, thought_id):
 	# 定义 sql 语句, 对每个节点进行日期数据的查询
 	sql = """
-	select datetime((creationdatetime / 10000000) - 62135553600, 'unixepoch'),
-	datetime((modificationdatetime / 10000000) - 62135553600, 'unixepoch')
+	select datetime((creationdatetime / 10000000), 'unixepoch', '-1969 years', '+1 days', '+8 hours'),
+	datetime((modificationdatetime / 10000000), 'unixepoch', '-1969 years', '+1 days', '+8 hours')
 	from thoughts where id="%s"
 	""" % thought_id
 	results = query_db(db_cursor, sql)
 	# 把查询结果转化为 python dict
 	thought_datetime_data = { \
 		'id': thought_id, \
-		'cdate': results[0][1], \
-		'mdate': results[0][0] \
+		'cdate': results[0][0], \
+		'mdate': results[0][1] \
 	}
 	return thought_datetime_data
 
