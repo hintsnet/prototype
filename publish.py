@@ -192,6 +192,30 @@ def get_related_thought_lists(db_cursor, thought_id):
 		related_content += gen_html_thought_list("📚 关联笔记", assoc_data)
 	return related_content
 
+# 定义一个方法, 获取当前节点的创建日期和最新修改日期等
+def get_thought_datetime_data(db_cursor, thought_id):
+	# 定义 sql 语句, 对每个节点进行日期数据的查询
+	sql = """
+	select datetime((creationdatetime / 10000000) - 62135553600, 'unixepoch'),
+	datetime((modificationdatetime / 10000000) - 62135553600, 'unixepoch')
+	from thoughts where id="%s"
+	""" % thought_id
+	results = query_db(db_cursor, sql)
+	# 把查询结果转化为 python dict
+	thought_datetime_data = { \
+		'id': thought_id, \
+		'cdate': results[0][1], \
+		'mdate': results[0][0] \
+	}
+	return thought_datetime_data
+
+# 定义一个方法, 获取当前节点相关日期信息, 并转换为 html 内容
+def get_thought_datetime(db_cursor, thought_id):
+	datetime_content = ""
+	datetime_data = get_thought_datetime_data(db_cursor, thought_id)
+	datetime_content += "<div class='datetime_info'>最后更新日期: %s</div>" % datetime_data['mdate']
+	return datetime_content
+
 # 定义一个方法, 以 html list 格式生成节点列表
 def gen_html_thought_list(list_title, thought_data):
 	tmp_str = ""
@@ -296,6 +320,8 @@ def gen_site_note_files(db_cursor, bucket_h, thought_ids, local_dir, to_pub_dir)
 		else:
 			to_pub_note_content += "<h4>此节点暂无笔记</h4>"
 		to_pub_note_content += get_related_thought_lists(db_cursor, thought_id)
+		to_pub_note_content += get_thought_datetime(db_cursor, thought_id)
+		to_pub_note_content += "<hr>"
 		to_pub_note_content += append_comment_form()
 		# 基于待发布笔记内容, 生成 html 内容
 		to_pub_note_html = gen_full_html(thought_data['name'], to_pub_note_content)
