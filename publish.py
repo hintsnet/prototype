@@ -193,27 +193,34 @@ def get_related_thought_lists(db_cursor, thought_id):
 	return related_content
 
 # 定义一个方法, 获取当前节点的创建日期和最新修改日期等
-def get_thought_datetime_data(db_cursor, thought_id):
+def get_thought_mod_datetime_data(db_cursor, thought_id):
 	# 定义 sql 语句, 对每个节点进行日期数据的查询
-	sql = """
-	select datetime((creationdatetime / 10000000), 'unixepoch', '-1969 years', '+1 days', '+8 hours'),
-	datetime((modificationdatetime / 10000000), 'unixepoch', '-1969 years', '+1 days', '+8 hours')
-	from thoughts where id="%s"
+	## 查询节点的修改时期
+	sql1 = """
+	select datetime((t.modificationdatetime / 10000000), 'unixepoch', '-1969 years', '+1 days', '+8 hours')
+	from thoughts as t where t.id="%s"
 	""" % thought_id
-	results = query_db(db_cursor, sql)
-	# 把查询结果转化为 python dict
-	thought_datetime_data = { \
-		'id': thought_id, \
-		'cdate': results[0][0], \
-		'mdate': results[0][1] \
-	}
-	return thought_datetime_data
+	## 查询节点对应附件的修改日期
+	sql2 = """
+	select datetime((a.modificationdatetime / 10000000), 'unixepoch', '-1969 years', '+1 days', '+8 hours')
+	from thoughts as t inner join Attachments as a
+	where a.sourceid = t.id and t.id="%s"
+	""" % thought_id
+	results1 = query_db(db_cursor, sql1)
+	results2 = query_db(db_cursor, sql2)
+	datetime1 = results1[0][0]
+	if len(results2) > 0:
+		datetime2 = max([dt for row in results2 for dt in row])
+	else:
+		datetime2 = datetime1
+	thought_mod_datetime_data = max(datetime1, datetime2)
+	return thought_mod_datetime_data
 
 # 定义一个方法, 获取当前节点相关日期信息, 并转换为 html 内容
 def get_thought_datetime(db_cursor, thought_id):
 	datetime_content = ""
-	datetime_data = get_thought_datetime_data(db_cursor, thought_id)
-	datetime_content += "<div class='datetime_info'>最后更新日期: %s</div>" % datetime_data['mdate']
+	datetime_data = get_thought_mod_datetime_data(db_cursor, thought_id)
+	datetime_content += "<div class='datetime_info'>最后更新日期: %s</div>" % datetime_data
 	return datetime_content
 
 # 定义一个方法, 以 html list 格式生成节点列表
