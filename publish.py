@@ -20,6 +20,26 @@ def sync_file(src_file_path, dest_file_path):
 		res = copyfile(src_file_path, dest_file_path)
 		return "文件已经同步到: %s" % res
 
+def thought_html_filter(filename):
+	if filename[-5:] == '.html' and filename != "index.html":
+		return True
+
+def get_matching_line_of_file(filename, pattern):
+	with open(filename, "r", encoding="utf-8") as fh:
+		for line in fh:
+			if re.search(pattern, line):
+				return line
+
+def remove_useless_files(thought_ids, tb_pub_path):
+	all_files = os.listdir(tb_pub_path);
+	html_files = filter(thought_html_filter, all_files)
+	for html_file in html_files:
+		full_path = tb_pub_path + '/' + html_file
+		html_title = get_matching_line_of_file(full_path, "<title>[^<]+<\/title>")
+		if html_file[0:-5] not in thought_ids:
+			print("删除不再使用的文件 %s\n[ %s ] " % (full_path, html_title[0:-1]))
+			os.remove(full_path)
+
 # 定义 sqlite3 数据库游标获取方法
 def connect_sqlite_db(db_file_path):
 	# 连接给定的 sqlite3 数据库
@@ -43,7 +63,7 @@ def get_pub_thought_ids(db_cursor):
 	select dest.id
 	from thoughts as src inner join links inner join thoughts as dest
 	where src.id = thoughtIdA and dest.id = thoughtIdB and
-	links.meaning = 5 and src.name = "可发布"
+	(links.meaning = 2 or links.meaning = 5 or links.meaning = 7) and src.name = "可发布"
 	"""
 	results = query_db(db_cursor, sql)
 	thought_ids = [result[0] for result in results]
@@ -72,7 +92,7 @@ def get_pre_thought_data(db_cursor, thought_id):
 		inner join links as l2 inner join thoughts as tag
 	where pre.id = l1.thoughtIdA and l1.thoughtIdB = curr.id and l1.relation = 1 and
 		tag.id = l2.thoughtIdA and pre.id = l2.thoughtIdB and
-		l2.meaning = 5 and tag.name = "可发布" and
+		(l2.meaning = 2 or l2.meaning = 5 or l2.meaning = 7) and tag.name = "可发布" and
 		curr.id="%s"
 	""" % thought_id
 	results = query_db(db_cursor, sql)
@@ -95,7 +115,7 @@ def get_post_thought_data(db_cursor, thought_id):
 		inner join links as l2 inner join thoughts as tag
 	where curr.id = l1.thoughtIdA and l1.thoughtIdB = post.id and l1.relation = 1 and
 		tag.id = l2.thoughtIdA and post.id = l2.thoughtIdB and
-		l2.meaning = 5 and tag.name = "可发布" and
+		(l2.meaning = 2 or l2.meaning = 5 or l2.meaning = 7) and tag.name = "可发布" and
 		curr.id="%s"
 	""" % thought_id
 	results = query_db(db_cursor, sql)
@@ -119,7 +139,7 @@ def get_assoc_thought_data(db_cursor, thought_id):
 	where ((curr.id = l1.thoughtIdA and l1.thoughtIdB = assoc.id) or 
 		(curr.id = l1.thoughtIdB and l1.thoughtIdA = assoc.id)) and l1.relation = 3
 		and tag.id = l2.thoughtIdA and assoc.id = l2.thoughtIdB and
-		l2.meaning = 5 and tag.name = "可发布" and
+		(l2.meaning = 2 or l2.meaning = 5 or l2.meaning = 7) and tag.name = "可发布" and
 		curr.id="%s"
 	""" % thought_id
 	results = query_db(db_cursor, sql)
@@ -383,6 +403,9 @@ if __name__ == '__main__':
 	# 获取所有待发布的节点 id 列表
 	pub_thought_ids = get_pub_thought_ids(db_cursor)
 
+	# 删除已取消发布的 pub 目录下的文件(目前仅删除 html)
+	ret = remove_useless_files(pub_thought_ids, tb_pub_basedir)
+	
 	# 复制样式表文件
 	sync_status = sync_file(local_css_path, to_pub_css_path)
 	# 打印样式表同步结果
